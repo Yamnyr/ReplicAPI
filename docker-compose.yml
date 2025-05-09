@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Produit Service
@@ -14,8 +14,8 @@ services:
       - PORT=4000
     ports:
       - "4000:4000"
-#    depends_on:
-#      - pgpool
+  #    depends_on:
+  #      - pgpool
 
   # Commande Service
   commande-service:
@@ -30,8 +30,8 @@ services:
       - PORT=5000
     ports:
       - "5000:5000"
-#    depends_on:
-#      - pgpool
+  #    depends_on:
+  #      - pgpool
 
   # API Gateway
   gateway:
@@ -53,11 +53,12 @@ services:
       - POSTGRESQL_REPLICATION_PASSWORD=replication_password
       - POSTGRESQL_USERNAME=postgres
       - POSTGRESQL_PASSWORD=mot_de_passe_postgres
-      - POSTGRESQL_DATABASE=example_db
+      - POSTGRESQL_DATABASE=produits_db
     volumes:
       - primary_data:/bitnami/postgresql
+      - ./initdb:/docker-entrypoint-initdb.d
     ports:
-      - "5432:5432"  # Expose for direct access from host (e.g., PgAdmin)
+      - "5432:5432" # Expose for direct access from host (e.g., PgAdmin)
     networks:
       - pgnet
 
@@ -74,7 +75,7 @@ services:
     volumes:
       - replica_data:/bitnami/postgresql
     ports:
-      - "5434:5432"  # Port exposé différent pour éviter conflit
+      - "5434:5432" # Port exposé différent pour éviter conflit
     networks:
       - pgnet
 
@@ -92,10 +93,10 @@ services:
       - PGPOOL_POSTGRES_USERNAME=postgres
       - PGPOOL_POSTGRES_PASSWORD=mot_de_passe_postgres
       - PGPOOL_ENABLE_LOAD_BALANCING=yes
-      - PGPOOL_ADMIN_USERNAME=admin       # Ajout obligatoire
-      - PGPOOL_ADMIN_PASSWORD=adminpass   # Ajout obligatoire
+      - PGPOOL_ADMIN_USERNAME=admin # Ajout obligatoire
+      - PGPOOL_ADMIN_PASSWORD=adminpass # Ajout obligatoire
     ports:
-      - "5433:5432"  # Pgpool expose son port ici
+      - "5433:5432" # Pgpool expose son port ici
     networks:
       - pgnet
 
