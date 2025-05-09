@@ -60,7 +60,6 @@ services:
       - POSTGRESQL_REPLICATION_PASSWORD=replication_password
       - POSTGRESQL_USERNAME=postgres
       - POSTGRESQL_PASSWORD=mot_de_passe_postgres
-      - POSTGRESQL_DATABASE=produits_db
     volumes:
       - primary_data:/bitnami/postgresql
       - ./initdb:/docker-entrypoint-initdb.d
