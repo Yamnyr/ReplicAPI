@@ -1,46 +1,36 @@
-version: '3.9'
+version: "3.8"
 
 services:
-  postgres-primary:
+  primary:
     image: postgres:15
-    container_name: postgres-primary
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: replicapi
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
-      - primary_data:/var/lib/postgresql/data
-      - ./primary:/docker-entrypoint-initdb.d
-    networks:
-      - postgres-network
+      - ./primary:/var/lib/postgresql/data
 
-  postgres-replica:
+  replica:
     image: postgres:15
-    container_name: postgres-replica
+    depends_on:
+      - primary
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: replicapi
-      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5433:5432"
-    depends_on:
-      - postgres-primary
-    volumes:
-      - replica_data:/var/lib/postgresql/data
-    networks:
-      - postgres-network
     command: >
-      postgres -c wal_level=replica
-               -c hot_standby=on
-               -c primary_conninfo="host=postgres-primary port=5432 user=postgres password=password"
-
-volumes:
-  primary_data:
-  replica_data:
-
-networks:
-  postgres-network:
-    driver: bridge
+      bash -c "
+        until pg_isready -h primary -U postgres; do
+          echo 'Waiting for primary to be ready...';
+          sleep 2;
+        done &&
+        rm -rf /var/lib/postgresql/data/* &&
+        PGPASSWORD=postgres pg_basebackup -h primary -D /var/lib/postgresql/data -U postgres -Fp -Xs -P -R &&
+        chown -R postgres:postgres /var/lib/postgresql/data &&
+        chmod 700 /var/lib/postgresql/data &&
+        su postgres -c 'postgres'
+      "
+    volumes:
+      - ./replica:/var/lib/postgresql/data
