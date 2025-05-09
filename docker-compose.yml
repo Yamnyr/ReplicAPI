@@ -46,35 +46,95 @@ services:
       - commande-service
 
   primary:
-    image: postgres:15
+    image: bitnami/postgresql:latest
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      - POSTGRESQL_REPLICATION_MODE=master
+      - POSTGRESQL_REPLICATION_USER=replication_user
+      - POSTGRESQL_REPLICATION_PASSWORD=replication_password
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=mot_de_passe_postgres
+      - POSTGRESQL_DATABASE=example_db
     volumes:
-      - ./primary:/var/lib/postgresql/data
+      - primary_data:/bitnami/postgresql
+    ports:
+      - "5432:5432"  # Expose for direct access from host (e.g., PgAdmin)
+    networks:
+      - pgnet
 
   replica:
-    image: postgres:15
+    image: bitnami/postgresql:latest
     depends_on:
       - primary
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
-    command: >
-      bash -c "
-        until pg_isready -h primary -U postgres; do
-          echo 'Waiting for primary to be ready...';
-          sleep 2;
-        done &&
-        rm -rf /var/lib/postgresql/data/* &&
-        PGPASSWORD=postgres pg_basebackup -h primary -D /var/lib/postgresql/data -U postgres -Fp -Xs -P -R &&
-        chown -R postgres:postgres /var/lib/postgresql/data &&
-        chmod 700 /var/lib/postgresql/data &&
-        su postgres -c 'postgres'
-      "
+      - POSTGRESQL_REPLICATION_MODE=slave
+      - POSTGRESQL_REPLICATION_USER=replication_user
+      - POSTGRESQL_REPLICATION_PASSWORD=replication_password
+      - POSTGRESQL_MASTER_HOST=primary
+      - POSTGRESQL_PASSWORD=mot_de_passe_postgres
     volumes:
-      - ./replica:/var/lib/postgresql/data
+      - replica_data:/bitnami/postgresql
+    ports:
+      - "5434:5432"  # Port exposé différent pour éviter conflit
+    networks:
+      - pgnet
+
+  pgpool:
+    image: bitnami/pgpool:latest
+    depends_on:
+      - primary
+      - replica
+    environment:
+      - PGPOOL_BACKEND_NODES=0:primary:5432,1:replica:5432
+      - PGPOOL_SR_CHECK_USER=replication_user
+      - PGPOOL_SR_CHECK_PASSWORD=replication_password
+      - PGPOOL_HEALTH_CHECK_USER=postgres
+      - PGPOOL_HEALTH_CHECK_PASSWORD=mot_de_passe_postgres
+      - PGPOOL_POSTGRES_USERNAME=postgres
+      - PGPOOL_POSTGRES_PASSWORD=mot_de_passe_postgres
+      - PGPOOL_ENABLE_LOAD_BALANCING=yes
+      - PGPOOL_ADMIN_USERNAME=admin       # Ajout obligatoire
+      - PGPOOL_ADMIN_PASSWORD=adminpass   # Ajout obligatoire
+    ports:
+      - "5433:5432"  # Pgpool expose son port ici
+    networks:
+      - pgnet
+
+volumes:
+  primary_data:
+  replica_data:
+
+networks:
+  pgnet:
+#  primary:
+#    image: postgres:15
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: postgres
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - ./primary:/var/lib/postgresql/data
+#
+#  replica:
+#    image: postgres:15
+#    depends_on:
+#      - primary
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: postgres
+#    ports:
+#      - "5433:5432"
+#    command: >
+#      bash -c "
+#        until pg_isready -h primary -U postgres; do
+#          echo 'Waiting for primary to be ready...';
+#          sleep 2;
+#        done &&
+#        rm -rf /var/lib/postgresql/data/* &&
+#        PGPASSWORD=postgres pg_basebackup -h primary -D /var/lib/postgresql/data -U postgres -Fp -Xs -P -R &&
+#        chown -R postgres:postgres /var/lib/postgresql/data &&
+#        chmod 700 /var/lib/postgresql/data &&
+#        su postgres -c 'postgres'
+#      "
+#    volumes:
+#      - ./replica:/var/lib/postgresql/data
