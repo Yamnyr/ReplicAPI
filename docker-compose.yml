@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Produit Service
+  produit-service:
+    build:
+      context: ./produit-service
+    environment:
+      - PGHOST=pgpool
+      - PGPORT=5432
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=produits_db
+      - PORT=4000
+    ports:
+      - "4000:4000"
+#    depends_on:
+#      - pgpool
+
+  # Commande Service
+  commande-service:
+    build:
+      context: ./commande-service
+    environment:
+      - PGHOST=pgpool
+      - PGPORT=5432
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=commandes_db
+      - PORT=5000
+    ports:
+      - "5000:5000"
+#    depends_on:
+#      - pgpool
+
+  # API Gateway
+  gateway:
+    build:
+      context: ./gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - GATEWAY_PORT=3000
+    depends_on:
+      - produit-service
+      - commande-service
