@@ -1,18 +1,13 @@
 const produitModel = require('../models/produitModel');
 
-// const getProduits = async (req, res) => {
-//     try {
-//         const produits = await produitModel.getAllProduits();
-//         res.json(produits);
-//     } catch (error) {
-//         console.error('❌ Error in getProduits:', error);
-//         res.status(500).json({ error: 'Internal Server Error' });
-//     }
-// };
-
 const getProduits = async (req, res) => {
-    console.log('📥 Requête reçue dans getProduits');
-    res.json([{ id: 1, name: 'Produit A' }]);
+    try {
+        const produits = await produitModel.getAllProduits();
+        res.json(produits);
+    } catch (error) {
+        console.error('❌ Error in getProduits:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 };
 const addProduit = async (req, res) => {
     const { name } = req.body;

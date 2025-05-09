@@ -7,15 +7,17 @@ services:
       context: ./produit-service
     environment:
       - PGHOST=pgpool
-      - PGPORT=5432
+      - PGPORT=5433 # Se connecter à PgPool sur le port exposé
       - PGUSER=postgres
-      - PGPASSWORD=postgres
+      - PGPASSWORD=mot_de_passe_postgres
       - PGDATABASE=produits_db
       - PORT=4000
     ports:
       - "4000:4000"
-  #    depends_on:
-  #      - pgpool
+    networks:
+      - pgnet
+    depends_on:
+      - pgpool
 
   # Commande Service
   commande-service:
@@ -23,15 +25,17 @@ services:
       context: ./commande-service
     environment:
       - PGHOST=pgpool
-      - PGPORT=5432
+      - PGPORT=5433 # Se connecter à PgPool sur le port exposé
       - PGUSER=postgres
-      - PGPASSWORD=postgres
+      - PGPASSWORD=mot_de_passe_postgres
       - PGDATABASE=commandes_db
       - PORT=5000
     ports:
       - "5000:5000"
-  #    depends_on:
-  #      - pgpool
+    networks:
+      - pgnet
+    depends_on:
+      - pgpool
 
   # API Gateway
   gateway:
@@ -44,7 +48,10 @@ services:
     depends_on:
       - produit-service
       - commande-service
+    networks:
+      - pgnet
 
+  # PostgreSQL Master (Primary)
   primary:
     image: bitnami/postgresql:latest
     environment:
@@ -58,10 +65,11 @@ services:
       - primary_data:/bitnami/postgresql
       - ./initdb:/docker-entrypoint-initdb.d
     ports:
-      - "5432:5432" # Expose for direct access from host (e.g., PgAdmin)
+      - "5432:5432"
     networks:
       - pgnet
 
+  # PostgreSQL Replica (Slave)
   replica:
     image: bitnami/postgresql:latest
     depends_on:
@@ -75,10 +83,11 @@ services:
     volumes:
       - replica_data:/bitnami/postgresql
     ports:
-      - "5434:5432" # Port exposé différent pour éviter conflit
+      - "5434:5432"
     networks:
       - pgnet
 
+  # PgPool (Load Balancer for PostgreSQL)
   pgpool:
     image: bitnami/pgpool:latest
     depends_on:
@@ -93,10 +102,10 @@ services:
       - PGPOOL_POSTGRES_USERNAME=postgres
       - PGPOOL_POSTGRES_PASSWORD=mot_de_passe_postgres
       - PGPOOL_ENABLE_LOAD_BALANCING=yes
-      - PGPOOL_ADMIN_USERNAME=admin # Ajout obligatoire
-      - PGPOOL_ADMIN_PASSWORD=adminpass # Ajout obligatoire
+      - PGPOOL_ADMIN_USERNAME=admin
+      - PGPOOL_ADMIN_PASSWORD=adminpass
     ports:
-      - "5433:5432" # Pgpool expose son port ici
+      - "5433:5432" # Port exposé pour PgPool
     networks:
       - pgnet
 
@@ -106,36 +115,4 @@ volumes:
 
 networks:
   pgnet:
-#  primary:
-#    image: postgres:15
-#    environment:
-#      POSTGRES_USER: postgres
-#      POSTGRES_PASSWORD: postgres
-#    ports:
-#      - "5432:5432"
-#    volumes:
-#      - ./primary:/var/lib/postgresql/data
-#
-#  replica:
-#    image: postgres:15
-#    depends_on:
-#      - primary
-#    environment:
-#      POSTGRES_USER: postgres
-#      POSTGRES_PASSWORD: postgres
-#    ports:
-#      - "5433:5432"
-#    command: >
-#      bash -c "
-#        until pg_isready -h primary -U postgres; do
-#          echo 'Waiting for primary to be ready...';
-#          sleep 2;
-#        done &&
-#        rm -rf /var/lib/postgresql/data/* &&
-#        PGPASSWORD=postgres pg_basebackup -h primary -D /var/lib/postgresql/data -U postgres -Fp -Xs -P -R &&
-#        chown -R postgres:postgres /var/lib/postgresql/data &&
-#        chmod 700 /var/lib/postgresql/data &&
-#        su postgres -c 'postgres'
-#      "
-#    volumes:
-#      - ./replica:/var/lib/postgresql/data
+    driver: bridge
