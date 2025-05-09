@@ -44,3 +44,37 @@ services:
     depends_on:
       - produit-service
       - commande-service
+
+  primary:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./primary:/var/lib/postgresql/data
+
+  replica:
+    image: postgres:15
+    depends_on:
+      - primary
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    command: >
+      bash -c "
+        until pg_isready -h primary -U postgres; do
+          echo 'Waiting for primary to be ready...';
+          sleep 2;
+        done &&
+        rm -rf /var/lib/postgresql/data/* &&
+        PGPASSWORD=postgres pg_basebackup -h primary -D /var/lib/postgresql/data -U postgres -Fp -Xs -P -R &&
+        chown -R postgres:postgres /var/lib/postgresql/data &&
+        chmod 700 /var/lib/postgresql/data &&
+        su postgres -c 'postgres'
+      "
+    volumes:
+      - ./replica:/var/lib/postgresql/data
