@@ -1,0 +1,46 @@
+version: '3.9'
+
+services:
+  postgres-primary:
+    image: postgres:15
+    container_name: postgres-primary
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: replicapi
+    ports:
+      - "5432:5432"
+    volumes:
+      - primary_data:/var/lib/postgresql/data
+      - ./primary:/docker-entrypoint-initdb.d
+    networks:
+      - postgres-network
+
+  postgres-replica:
+    image: postgres:15
+    container_name: postgres-replica
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: replicapi
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    depends_on:
+      - postgres-primary
+    volumes:
+      - replica_data:/var/lib/postgresql/data
+    networks:
+      - postgres-network
+    command: >
+      postgres -c wal_level=replica
+               -c hot_standby=on
+               -c primary_conninfo="host=postgres-primary port=5432 user=postgres password=password"
+
+volumes:
+  primary_data:
+  replica_data:
+
+networks:
+  postgres-network:
+    driver: bridge
