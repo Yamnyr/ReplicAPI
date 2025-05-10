@@ -7,7 +7,7 @@ services:
       context: ./produit-service
     environment:
       - PGHOST=pgpool
-      - PGPORT=5433 # Se connecter à PgPool sur le port exposé
+      - PGPORT=5432 # Modifier de 5433 à 5432 car PgPool écoute sur 5432 en interne
       - PGUSER=postgres
       - PGPASSWORD=mot_de_passe_postgres
       - PGDATABASE=produits_db
@@ -25,7 +25,7 @@ services:
       context: ./commande-service
     environment:
       - PGHOST=pgpool
-      - PGPORT=5433 # Se connecter à PgPool sur le port exposé
+      - PGPORT=5432 # Modifier de 5433 à 5432 car PgPool écoute sur 5432 en interne
       - PGUSER=postgres
       - PGPASSWORD=mot_de_passe_postgres
       - PGDATABASE=commandes_db
@@ -65,6 +65,11 @@ services:
       - ./initdb:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - pgnet
 
@@ -83,11 +88,17 @@ services:
       - replica_data:/bitnami/postgresql
     ports:
       - "5434:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - pgnet
 
   # PgPool (Load Balancer for PostgreSQL)
   pgpool:
+    command: [ "bash", "-c", "sleep 10 && /opt/bitnami/scripts/pgpool/run.sh" ]
     image: bitnami/pgpool:latest
     depends_on:
       - primary
