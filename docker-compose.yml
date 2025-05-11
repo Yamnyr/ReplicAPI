@@ -66,7 +66,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -89,7 +89,7 @@ services:
     ports:
       - "5434:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -98,7 +98,7 @@ services:
 
   # PgPool (Load Balancer for PostgreSQL)
   pgpool:
-    command: [ "bash", "-c", "sleep 10 && /opt/bitnami/scripts/pgpool/run.sh" ]
+    command: ["bash", "-c", "sleep 10 && /opt/bitnami/scripts/pgpool/run.sh"]
     image: bitnami/pgpool:latest
     depends_on:
       - primary
@@ -114,6 +114,12 @@ services:
       - PGPOOL_ENABLE_LOAD_BALANCING=yes
       - PGPOOL_ADMIN_USERNAME=admin
       - PGPOOL_ADMIN_PASSWORD=adminpass
+      # 🔽 Logging activé ici
+      - PGPOOL_ENABLE_LOG_CONNECTIONS=yes
+      - PGPOOL_ENABLE_LOG_HOSTNAME=yes
+      - PGPOOL_ENABLE_LOG_PER_NODE_STATEMENT=yes
+      - PGPOOL_ENABLE_LOG_STATEMENT=yes
+      - PGPOOL_DEBUG_LEVEL=1
     ports:
       - "5433:5432" # Port exposé pour PgPool
     networks:
