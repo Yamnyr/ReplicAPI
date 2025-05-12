@@ -14,7 +14,7 @@ Le projet est composé de plusieurs services Dockerisés :
 Le schéma de connexion :
 
 ```
-[frontend] → [gateway] → [produit-service | commande-service] → [pgpool] → [primary/replica]
+[gateway] → [produit-service | commande-service] → [pgpool] → [primary/replica]
 ```
 
 ## Lancement du projet
@@ -39,7 +39,6 @@ Le schéma de connexion :
    - Initialiser les schémas de base de données via `initdb/init.sql`.
 
 3. **Accéder aux services**
-   - **Frontend** (si développé) : http://localhost:3000
    - **Produit-service** : http://localhost:4000
    - **Commande-service** : http://localhost:5000
    - **PgPool** (PostgreSQL load balancer) : localhost:5433
