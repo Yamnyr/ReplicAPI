@@ -88,7 +88,6 @@ Connectez-vous à pgAdmin 4 :
 
 ## Notes
 
-- Les variables d’environnement sont configurées dans chaque dossier de service (`.env`).
 - Le schéma des bases est initialisé automatiquement au démarrage via `initdb/init.sql`.
 - Lien Trello : https://trello.com/invite/b/6821a62c37b46d198909dfb2/ATTI5a41cac860dcd76c8dcdb8caf18a3531F6F5ADDC/replicapi
 
