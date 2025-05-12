@@ -120,6 +120,17 @@ services:
       - PGPOOL_ENABLE_LOG_PER_NODE_STATEMENT=yes
       - PGPOOL_ENABLE_LOG_STATEMENT=yes
       - PGPOOL_DEBUG_LEVEL=1
+
+
+      # 🔽 Configuration pour forcer les SELECT vers les replicas
+      - PGPOOL_LOAD_BALANCE_MODE=on
+      - PGPOOL_MASTER_SLAVE_MODE=on
+      - PGPOOL_MASTER_SLAVE_SUB_MODE=stream
+      - PGPOOL_WRITE_FUNCTION_LIST=nextval,setval,currval,lastval
+      - PGPOOL_PRIMARY_ROUTING_QUERY_PATTERN_LIST=.*FOR UPDATE,.*FOR SHARE
+
+
+
     ports:
       - "5433:5432" # Port exposé pour PgPool
     networks:
